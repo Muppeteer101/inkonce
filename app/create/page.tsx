@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { pageMetadata } from '@/lib/seo';
+import { clerkEnabled } from '@/lib/flags';
 import Studio from './studio';
 
 export const metadata = pageMetadata({
@@ -25,9 +27,20 @@ export default async function CreatePage({
         Drafts are for exploring. When one clicks, refine it to studio quality and export
         the stencil.
       </p>
-      <Suspense>
-        <Studio initialIdea={idea} initialStyle={style} />
-      </Suspense>
+      {clerkEnabled ? (
+        <Suspense>
+          <Studio initialIdea={idea} initialStyle={style} />
+        </Suspense>
+      ) : (
+        <div className="notice" style={{ maxWidth: 620 }}>
+          <p style={{ marginBottom: 10 }}>
+            The design studio is opening shortly — we&apos;re finishing the last
+            connection to the generation engine. In the meantime, explore the{' '}
+            <Link href="/styles" style={{ color: 'var(--blood)' }}>28 styles</Link> and{' '}
+            <Link href="/ideas" style={{ color: 'var(--blood)' }}>idea library</Link> to plan your piece.
+          </p>
+        </div>
+      )}
     </main>
   );
 }

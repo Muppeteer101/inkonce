@@ -2,7 +2,28 @@ import { Redis } from '@upstash/redis';
 
 // Upstash Redis — create a dedicated InkOnce database (do NOT share Almost
 // Legal's). Reads UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN from env.
-export const redis = Redis.fromEnv();
+//
+// Lazily constructed via a Proxy so that importing this module never throws
+// when the env is absent — the public marketing/SEO pages don't touch Redis,
+// and only routes that actually use it (auth'd generation, account) surface a
+// clean error before storage is configured.
+let _redis: Redis | null = null;
+function getRedis(): Redis {
+  if (_redis) return _redis;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error('Upstash Redis is not configured');
+  _redis = new Redis({ url, token });
+  return _redis;
+}
+
+export const redis: Redis = new Proxy({} as Redis, {
+  get(_t, prop) {
+    const r = getRedis() as unknown as Record<string | symbol, unknown>;
+    const v = r[prop];
+    return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(r) : v;
+  },
+});
 
 /**
  * Key schema — every read/write goes through these helpers so the whole

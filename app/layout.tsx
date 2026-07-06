@@ -3,6 +3,7 @@ import { Fraunces, Space_Grotesk } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import Link from 'next/link';
 import NavAuth from './nav-auth';
+import { clerkEnabled } from '@/lib/flags';
 import {
   SITE_URL,
   SITE_NAME,
@@ -34,8 +35,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
+  const shell = (
       <html lang="en" className={`${fraunces.variable} ${grotesk.variable}`}>
         <body>
           <script
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/placements">Placements</Link>
                 <Link href="/pricing">Pricing</Link>
               </div>
-              <NavAuth />
+              {clerkEnabled ? <NavAuth /> : null}
               <Link href="/create" className="btn btn-blood btn-sm">Start free</Link>
             </div>
           </nav>
@@ -101,6 +101,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </footer>
         </body>
       </html>
-    </ClerkProvider>
   );
+  // Only mount ClerkProvider when configured — keeps the public site (and its
+  // 1,476 SEO pages) rendering before auth keys are added. Sign-in-gated
+  // surfaces (/create, /account) branch on clerkEnabled themselves.
+  return clerkEnabled ? <ClerkProvider>{shell}</ClerkProvider> : shell;
 }
