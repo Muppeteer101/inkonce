@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { STYLES, styleBySlug } from '@/lib/content/styles';
 import { IDEAS } from '@/lib/content/ideas';
+import { styleImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -69,12 +71,19 @@ export default async function StylePage({ params }: { params: Promise<{ slug: st
         <Link href="/styles" className="btn btn-ghost">All 28 styles</Link>
       </div>
 
-      <div className="prose">
-        <p>{style.description}</p>
-        <h2>What makes it {style.name}</h2>
-        <ul>
-          {style.traits.map((t) => <li key={t}>{t}</li>)}
-        </ul>
+      <div className="split" style={{ marginBottom: 20 }}>
+        <div className="prose" style={{ maxWidth: 'none' }}>
+          <p>{style.description}</p>
+          <h2>What makes it {style.name}</h2>
+          <ul>
+            {style.traits.map((t) => <li key={t}>{t}</li>)}
+          </ul>
+        </div>
+        {styleImage(style.slug) && (
+          <figure className="hero-figure">
+            <Image src={styleImage(style.slug)!} alt={`${style.name} tattoo design example generated with InkOnce`} width={896} height={1200} />
+          </figure>
+        )}
       </div>
 
       {ideas.length > 0 && (

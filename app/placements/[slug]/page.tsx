@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { PLACEMENTS, placementBySlug } from '@/lib/content/placements';
 import { IDEAS } from '@/lib/content/ideas';
+import { placementImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -57,12 +59,21 @@ export default async function PlacementPage({ params }: { params: Promise<{ slug
       <p className="lede" style={{ margin: '20px 0 30px' }}>{p.description}</p>
       <Link href={`/create`} className="btn btn-blood">Design for the {p.name.toLowerCase()} — free</Link>
 
-      <section className="section-tight prose">
-        <h2 className="title">The honest notes</h2>
-        <h3>Pain</h3>
-        <p>{p.painNote}</p>
-        <h3>Size &amp; sessions</h3>
-        <p>{p.sizeGuide}</p>
+      <section className="section-tight">
+        <div className={placementImage(p.slug) ? 'split' : ''}>
+          <div className="prose" style={{ maxWidth: 'none' }}>
+            <h2 className="title">The honest notes</h2>
+            <h3>Pain</h3>
+            <p>{p.painNote}</p>
+            <h3>Size &amp; sessions</h3>
+            <p>{p.sizeGuide}</p>
+          </div>
+          {placementImage(p.slug) && (
+            <figure className="hero-figure">
+              <Image src={placementImage(p.slug)!} alt={`Tattoo shown on the ${p.name.toLowerCase()}, designed with InkOnce`} width={896} height={1200} />
+            </figure>
+          )}
+        </div>
       </section>
 
       {ideas.length > 0 && (

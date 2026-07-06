@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { STYLES } from '@/lib/content/styles';
 import { IDEAS } from '@/lib/content/ideas';
+import { GALLERY } from '@/lib/content/showcase';
 import { jsonLd, howToJsonLd, pageMetadata } from '@/lib/seo';
 
 export const metadata = pageMetadata({
@@ -16,24 +18,44 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(howToJsonLd()) }} />
 
       <section className="hero section">
-        <div className="wrap">
-          <p className="kicker">AI tattoo design studio</p>
-          <h1 className="display">
-            You only get one skin.<br />
-            <em>Design it right, once.</em>
-          </h1>
-          <p className="lede" style={{ margin: '26px 0 34px' }}>
-            Explore your tattoo idea in 28 real styles, refine the one you love, and walk
-            into the studio with a hi-res design and a clean stencil. Private by default.
-            Yours forever. No subscription required.
-          </p>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <Link href="/create" className="btn btn-blood">Design yours free</Link>
-            <Link href="/styles" className="btn btn-ghost">Browse the 28 styles</Link>
+        <div className="wrap split">
+          <div>
+            <p className="kicker">AI tattoo design studio</p>
+            <h1 className="display">
+              You only get one skin.<br />
+              <em>Design it right, once.</em>
+            </h1>
+            <p className="lede" style={{ margin: '26px 0 34px' }}>
+              Explore your tattoo idea in 28 real styles, refine the one you love, and walk
+              into the studio with a hi-res design and a clean stencil. Private by default.
+              Yours forever. No subscription required.
+            </p>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <Link href="/create" className="btn btn-blood">Design yours free</Link>
+              <Link href="/styles" className="btn btn-ghost">Browse the 28 styles</Link>
+            </div>
+            <p className="small faint" style={{ marginTop: 18 }}>
+              3 free design runs · no card · your designs never get deleted or blurred
+            </p>
           </div>
-          <p className="small faint" style={{ marginTop: 18 }}>
-            3 free design runs · no card · your designs never get deleted or blurred
-          </p>
+          <figure className="hero-figure">
+            <Image src="/showcase/place-forearm.png" alt="Fine line botanical tattoo designed on InkOnce, shown on a forearm" width={896} height={1200} priority />
+          </figure>
+        </div>
+      </section>
+
+      <section className="section-tight">
+        <div className="wrap">
+          <p className="kicker">Made with InkOnce</p>
+          <h2 className="title" style={{ marginBottom: 22 }}>Real designs, real styles</h2>
+          <div className="gallery">
+            {GALLERY.map((g) => (
+              <Link key={g.src} href={g.href} aria-label={`${g.label} tattoo designs`}>
+                <Image src={g.src} alt={`${g.label} tattoo design generated with InkOnce`} width={896} height={1200} />
+                <span className="glabel">{g.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

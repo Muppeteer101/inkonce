@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { STYLES } from '@/lib/content/styles';
+import { styleImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
 export const metadata = pageMetadata({
@@ -27,13 +29,21 @@ export default function StylesIndex() {
         Learn what defines each genre, then design in it — free.
       </p>
       <div className="grid grid-3">
-        {STYLES.map((s) => (
-          <Link key={s.slug} href={`/styles/${s.slug}`} className="card">
-            <h3>{s.name}</h3>
-            <p style={{ marginBottom: 10 }}>{s.tagline}</p>
-            <p className="small faint">{s.traits.join(' · ')}</p>
-          </Link>
-        ))}
+        {STYLES.map((s) => {
+          const img = styleImage(s.slug);
+          return (
+            <Link key={s.slug} href={`/styles/${s.slug}`} className="card">
+              {img && (
+                <div className="style-card-media">
+                  <Image src={img} alt={`${s.name} tattoo design example`} width={896} height={1200} />
+                </div>
+              )}
+              <h3>{s.name}</h3>
+              <p style={{ marginBottom: 10 }}>{s.tagline}</p>
+              <p className="small faint">{s.traits.join(' · ')}</p>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );
