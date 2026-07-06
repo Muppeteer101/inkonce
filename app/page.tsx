@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { STYLES } from '@/lib/content/styles';
 import { IDEAS } from '@/lib/content/ideas';
-import { GALLERY, COLOUR_GALLERY } from '@/lib/content/showcase';
+import { GALLERY, COLOUR_GALLERY, ideaImage } from '@/lib/content/showcase';
 import { jsonLd, howToJsonLd, pageMetadata } from '@/lib/seo';
 
 export const metadata = pageMetadata({
@@ -164,12 +164,20 @@ export default function Home() {
           <p className="kicker">Start somewhere</p>
           <h2 className="title">Popular ideas, properly explored</h2>
           <div className="grid grid-3" style={{ marginTop: 28 }}>
-            {IDEAS.slice(0, 9).map((i) => (
-              <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
-                <h3>{i.name}</h3>
-                <p>{i.meanings.slice(0, 3).join(' · ')}</p>
-              </Link>
-            ))}
+            {IDEAS.slice(0, 9).map((i) => {
+              const img = ideaImage(i.slug);
+              return (
+                <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
+                  {img && (
+                    <div className="style-card-media">
+                      <Image src={img} alt={`${i.name} tattoo design`} width={896} height={1200} />
+                    </div>
+                  )}
+                  <h3>{i.name}</h3>
+                  <p>{i.meanings.slice(0, 3).join(' · ')}</p>
+                </Link>
+              );
+            })}
           </div>
           <div style={{ marginTop: 26 }}>
             <Link href="/ideas" className="btn btn-ghost">All tattoo ideas →</Link>

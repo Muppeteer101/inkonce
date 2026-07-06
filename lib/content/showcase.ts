@@ -78,9 +78,27 @@ export const COLOUR_GALLERY: { src: string; label: string; href: string }[] = [
   { src: '/showcase/colour-newschool-sleeve.png', label: 'New school sleeve', href: '/styles/new-school' },
 ];
 
+/**
+ * Idea images live under /showcase/ideas/{slug}.png — one per idea in
+ * lib/content/ideas.ts. Every idea slug has a file (rose reuses the chicano
+ * rose flash), so ideaImage() is defined for all of them.
+ */
+export const IDEA_SLUGS_WITH_IMAGES = new Set([
+  'lion', 'wolf', 'snake', 'dragon', 'phoenix', 'butterfly', 'rose', 'skull',
+  'owl', 'koi-fish', 'tiger', 'eagle', 'bear', 'octopus', 'spider', 'scorpion',
+  'hummingbird', 'raven', 'moth', 'mandala', 'compass', 'anchor', 'clock',
+  'dagger', 'crown', 'heart', 'angel', 'demon', 'grim-reaper', 'medusa',
+  'sun-and-moon', 'moon', 'stars', 'eye', 'mountain', 'wave', 'tree-of-life',
+  'lotus', 'cherry-blossom', 'peony', 'sunflower', 'mushroom', 'shark',
+  'turtle', 'cross', 'semicolon', 'family', 'memorial', 'quote',
+]);
+
 export function styleImage(slug: string): string | undefined {
   return STYLE_SHOWCASE[slug];
 }
 export function placementImage(slug: string): string | undefined {
   return PLACEMENT_SHOWCASE[slug];
+}
+export function ideaImage(slug: string): string | undefined {
+  return IDEA_SLUGS_WITH_IMAGES.has(slug) ? `/showcase/ideas/${slug}.png` : undefined;
 }

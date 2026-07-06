@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { STYLES, styleBySlug } from '@/lib/content/styles';
 import { IDEAS } from '@/lib/content/ideas';
-import { styleImage } from '@/lib/content/showcase';
+import { styleImage, ideaImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -90,12 +90,20 @@ export default async function StylePage({ params }: { params: Promise<{ slug: st
         <section className="section-tight">
           <h2 className="title">Great subjects for {style.name}</h2>
           <div className="grid grid-3">
-            {ideas.slice(0, 6).map((i) => (
-              <Link key={i.slug} href={`/ideas/${i.slug}/${style.slug}`} className="card">
-                <h3>{i.name} in {style.name}</h3>
-                <p>{i.meanings.slice(0, 2).join(' · ')}</p>
-              </Link>
-            ))}
+            {ideas.slice(0, 6).map((i) => {
+              const img = ideaImage(i.slug);
+              return (
+                <Link key={i.slug} href={`/ideas/${i.slug}/${style.slug}`} className="card">
+                  {img && (
+                    <div className="style-card-media">
+                      <Image src={img} alt={`${i.name} tattoo design`} width={896} height={1200} />
+                    </div>
+                  )}
+                  <h3>{i.name} in {style.name}</h3>
+                  <p>{i.meanings.slice(0, 2).join(' · ')}</p>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

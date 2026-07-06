@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { PLACEMENTS, placementBySlug } from '@/lib/content/placements';
 import { IDEAS } from '@/lib/content/ideas';
-import { placementImage } from '@/lib/content/showcase';
+import { placementImage, ideaImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -80,12 +80,20 @@ export default async function PlacementPage({ params }: { params: Promise<{ slug
         <section className="section-tight">
           <h2 className="title">Ideas that flow here</h2>
           <div className="grid grid-3">
-            {ideas.map((i) => (
-              <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
-                <h3>{i.name}</h3>
-                <p>{i.meanings.slice(0, 2).join(' · ')}</p>
-              </Link>
-            ))}
+            {ideas.map((i) => {
+              const img = ideaImage(i.slug);
+              return (
+                <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
+                  {img && (
+                    <div className="style-card-media">
+                      <Image src={img} alt={`${i.name} tattoo design`} width={896} height={1200} />
+                    </div>
+                  )}
+                  <h3>{i.name}</h3>
+                  <p>{i.meanings.slice(0, 2).join(' · ')}</p>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

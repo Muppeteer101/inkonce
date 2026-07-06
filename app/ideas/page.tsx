@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { IDEAS } from '@/lib/content/ideas';
+import { ideaImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
 export const metadata = pageMetadata({
@@ -27,12 +29,20 @@ export default function IdeasIndex() {
         first, ink second.
       </p>
       <div className="grid grid-3">
-        {IDEAS.map((i) => (
-          <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
-            <h3>{i.name}</h3>
-            <p>{i.meanings.slice(0, 3).join(' · ')}</p>
-          </Link>
-        ))}
+        {IDEAS.map((i) => {
+          const img = ideaImage(i.slug);
+          return (
+            <Link key={i.slug} href={`/ideas/${i.slug}`} className="card">
+              {img && (
+                <div className="style-card-media">
+                  <Image src={img} alt={`${i.name} tattoo design`} width={896} height={1200} />
+                </div>
+              )}
+              <h3>{i.name}</h3>
+              <p>{i.meanings.slice(0, 3).join(' · ')}</p>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );

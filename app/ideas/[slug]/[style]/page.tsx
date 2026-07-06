@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { IDEAS, ideaBySlug } from '@/lib/content/ideas';
 import { styleBySlug } from '@/lib/content/styles';
 import { placementBySlug } from '@/lib/content/placements';
+import { ideaImage, styleImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 /**
@@ -83,15 +85,33 @@ export default async function IdeaStylePage({
       <h1 className="display" style={{ fontSize: 'clamp(2rem,4.6vw,3.2rem)' }}>
         {style.name} <em>{idea.name.toLowerCase()}</em> tattoo
       </h1>
-      <p className="lede" style={{ margin: '20px 0 30px' }}>
-        {idea.description} In {style.name}, that reads as: {style.tagline.toLowerCase()}
-      </p>
-      <Link
-        href={`/create?idea=${encodeURIComponent(idea.name.toLowerCase() + ' tattoo')}&style=${style.slug}`}
-        className="btn btn-blood"
-      >
-        Generate this design — free
-      </Link>
+      <div className={ideaImage(idea.slug) || styleImage(style.slug) ? 'split' : ''} style={{ marginTop: 20 }}>
+        <div>
+          <p className="lede" style={{ marginBottom: 26 }}>
+            {idea.description} In {style.name}, that reads as: {style.tagline.toLowerCase()}
+          </p>
+          <Link
+            href={`/create?idea=${encodeURIComponent(idea.name.toLowerCase() + ' tattoo')}&style=${style.slug}`}
+            className="btn btn-blood"
+          >
+            Generate this design — free
+          </Link>
+        </div>
+        {(ideaImage(idea.slug) || styleImage(style.slug)) && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {ideaImage(idea.slug) && (
+              <figure className="hero-figure">
+                <Image src={ideaImage(idea.slug)!} alt={`${idea.name} tattoo design`} width={896} height={1200} />
+              </figure>
+            )}
+            {styleImage(style.slug) && (
+              <figure className="hero-figure">
+                <Image src={styleImage(style.slug)!} alt={`${style.name} tattoo style example`} width={896} height={1200} />
+              </figure>
+            )}
+          </div>
+        )}
+      </div>
 
       <section className="section-tight prose">
         <h2 className="title">Why this pairing {recommended ? 'works' : 'is interesting'}</h2>

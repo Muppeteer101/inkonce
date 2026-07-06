@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { IDEAS, ideaBySlug } from '@/lib/content/ideas';
 import { styleBySlug } from '@/lib/content/styles';
 import { placementBySlug } from '@/lib/content/placements';
+import { ideaImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 
 export function generateStaticParams() {
@@ -53,14 +55,21 @@ export default async function IdeaPage({ params }: { params: Promise<{ slug: str
       <h1 className="display" style={{ fontSize: 'clamp(2.2rem,5vw,3.4rem)' }}>
         {idea.name} <em>tattoo</em>
       </h1>
-      <p className="lede" style={{ margin: '18px 0 8px' }}>{idea.description}</p>
-      <div style={{ margin: '10px 0 30px' }}>
-        {idea.meanings.map((m) => <span key={m} className="tag">{m}</span>)}
-      </div>
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 12 }}>
-        <Link href={`/create?idea=${encodeURIComponent(idea.name.toLowerCase() + ' tattoo')}`} className="btn btn-blood">
-          Design a {idea.name.toLowerCase()} tattoo — free
-        </Link>
+      <div className={ideaImage(idea.slug) ? 'split' : ''} style={{ marginTop: 18 }}>
+        <div>
+          <p className="lede" style={{ marginBottom: 8 }}>{idea.description}</p>
+          <div style={{ margin: '10px 0 22px' }}>
+            {idea.meanings.map((m) => <span key={m} className="tag">{m}</span>)}
+          </div>
+          <Link href={`/create?idea=${encodeURIComponent(idea.name.toLowerCase() + ' tattoo')}`} className="btn btn-blood">
+            Design a {idea.name.toLowerCase()} tattoo — free
+          </Link>
+        </div>
+        {ideaImage(idea.slug) && (
+          <figure className="hero-figure">
+            <Image src={ideaImage(idea.slug)!} alt={`${idea.name} tattoo design generated with InkOnce`} width={896} height={1200} priority />
+          </figure>
+        )}
       </div>
 
       <section className="section-tight">
