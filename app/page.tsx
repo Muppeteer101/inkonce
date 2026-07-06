@@ -122,25 +122,26 @@ export default function Home() {
 
       <section className="section">
         <div className="wrap">
-          <p className="kicker">Straight comparison</p>
-          <h2 className="title">Why people switch to InkOnce</h2>
-          <div className="table-scroll" style={{ marginTop: 26 }}>
-            <table className="compare">
-              <thead>
-                <tr><th></th><th>InkOnce</th><th>Typical AI tattoo apps</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>To design one tattoo</td><td className="yes">$19.99 once — no subscription</td><td className="no">$15/month subscription (up to $72/yr)</td></tr>
-                <tr><td>Free designs</td><td className="yes">Private, full-quality, keep forever</td><td className="no">Public, blurred/locked, deleted after 30 days</td></tr>
-                <tr><td>Stencil export</td><td className="yes">Included in every paid plan</td><td className="no">Paid tiers only</td></tr>
-                <tr><td>Artist handoff pack</td><td className="yes">Design + stencil + placement notes</td><td className="no">—</td></tr>
-                <tr><td>Who owns your designs</td><td className="yes">You do</td><td className="no">Check the small print</td></tr>
-              </tbody>
-            </table>
+          <p className="kicker">What you get</p>
+          <h2 className="title">Everything to walk in ready</h2>
+          <div className="grid grid-4" style={{ marginTop: 28 }}>
+            <div className="card">
+              <h3>Pay once</h3>
+              <p>$19.99 designs one whole tattoo over a week. No subscription, no auto-renew.</p>
+            </div>
+            <div className="card">
+              <h3>A clean stencil</h3>
+              <p>Every design exports to thermal-ready stencil linework your artist can transfer straight to skin.</p>
+            </div>
+            <div className="card">
+              <h3>Artist handoff pack</h3>
+              <p>Hi-res design, stencil and placement notes in one download — the document a studio actually wants.</p>
+            </div>
+            <div className="card">
+              <h3>Yours to keep</h3>
+              <p>Private by default and kept forever. Your designs are yours to print, share, and ink.</p>
+            </div>
           </div>
-          <p className="small faint" style={{ marginTop: 14 }}>
-            Comparison based on published pricing/feature pages of leading AI tattoo apps, July 2026.
-          </p>
         </div>
       </section>
 

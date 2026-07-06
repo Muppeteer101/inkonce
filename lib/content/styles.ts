@@ -1,6 +1,6 @@
 /**
- * The 28 tattoo styles — matching BlackInk's breadth ("28+ styles") with
- * hand-written prompt fragments that anchor the model in each genre's real
+ * The 28 tattoo styles, each with hand-written prompt fragments that anchor
+ * the model in each genre's real
  * technique vocabulary. Every entry powers a programmatic SEO page at
  * /styles/{slug} and idea×style pages at /ideas/{idea}/{style}.
  */

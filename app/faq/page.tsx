@@ -37,8 +37,8 @@ const FAQS = [
     a: 'The Design Pass lasts 7 days; Ink Studio allowances reset monthly without rollover. Your designs never expire either way.',
   },
   {
-    q: 'How is InkOnce different from BlackInk and other tattoo AI apps?',
-    a: 'Three ways: no forced subscription (a one-time Design Pass covers a complete tattoo project), a genuinely respectful free tier (private, permanent, full-quality), and placement-aware, genre-disciplined design generation with artist-ready exports.',
+    q: 'What makes InkOnce different?',
+    a: 'Three things: no forced subscription — a one-time Design Pass covers a complete tattoo project; a genuinely respectful free tier that keeps your designs private, permanent and full-quality; and placement-aware, genre-disciplined design generation with artist-ready stencil and handoff exports.',
   },
 ];
 

@@ -77,7 +77,7 @@ export const PLANS: Record<Plan['id'], Plan> = {
     kind: 'subscription',
     interval: 'year',
     caps: { draftRuns: 40, refineRuns: 5, hiResExports: 3, stencilExports: 3 },
-    blurb: 'A year of Ink Studio for less than half of what the other guys charge.',
+    blurb: 'A full year of Ink Studio at the best price we offer.',
   },
 };
 

@@ -97,23 +97,21 @@ export default function PricingPage() {
       </div>
 
       <section className="section-tight">
-        <h2 className="title">Honest comparison</h2>
+        <h2 className="title">What every plan includes</h2>
         <div className="table-scroll">
           <table className="compare">
             <thead>
-              <tr><th>Designing one tattoo</th><th>InkOnce</th><th>BlackInk AI</th></tr>
+              <tr><th></th><th>Free</th><th>Design Pass</th><th>Ink Studio</th></tr>
             </thead>
             <tbody>
-              <tr><td>Cost</td><td className="yes">$19.99 once</td><td className="no">$15/mo subscription — $72/yr if you forget to cancel</td></tr>
-              <tr><td>Free designs</td><td className="yes">Private · kept forever · full quality</td><td className="no">Public · deleted after 30 days · some locked &amp; blurred</td></tr>
-              <tr><td>Annual option</td><td className="yes">$39.99</td><td className="no">$72</td></tr>
-              <tr><td>Stencil converter</td><td className="yes">Included</td><td className="no">Pro only</td></tr>
+              <tr><td>Design runs</td><td>3</td><td className="yes">25 / week</td><td className="yes">40 / month</td></tr>
+              <tr><td>Studio-quality refines</td><td className="no">—</td><td className="yes">7</td><td className="yes">5 / month</td></tr>
+              <tr><td>Hi-res + stencil export</td><td className="no">—</td><td className="yes">Included</td><td className="yes">Included</td></tr>
+              <tr><td>Private &amp; kept forever</td><td className="yes">Yes</td><td className="yes">Yes</td><td className="yes">Yes</td></tr>
+              <tr><td>Billing</td><td>—</td><td className="yes">One payment</td><td>Monthly / yearly</td></tr>
             </tbody>
           </table>
         </div>
-        <p className="small faint" style={{ marginTop: 12 }}>
-          Competitor figures from blackink.ai/pricing, July 2026.
-        </p>
       </section>
 
       <section className="section-tight prose">
