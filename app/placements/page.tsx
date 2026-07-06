@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { PLACEMENTS } from '@/lib/content/placements';
+import { placementImage } from '@/lib/content/showcase';
 import { pageMetadata, jsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
 export const metadata = pageMetadata({
@@ -27,12 +29,20 @@ export default function PlacementsIndex() {
         differently too. Honest notes on all 20 placements.
       </p>
       <div className="grid grid-3">
-        {PLACEMENTS.map((p) => (
-          <Link key={p.slug} href={`/placements/${p.slug}`} className="card">
-            <h3>{p.name}</h3>
-            <p>{p.painNote}</p>
-          </Link>
-        ))}
+        {PLACEMENTS.map((p) => {
+          const img = placementImage(p.slug);
+          return (
+            <Link key={p.slug} href={`/placements/${p.slug}`} className="card">
+              {img && (
+                <div className="style-card-media">
+                  <Image src={img} alt={`Tattoo on the ${p.name.toLowerCase()}`} width={896} height={1200} />
+                </div>
+              )}
+              <h3>{p.name}</h3>
+              <p>{p.painNote}</p>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );
