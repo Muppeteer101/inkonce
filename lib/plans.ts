@@ -17,7 +17,8 @@ export const COST_PER_IMAGE_USD = {
   premium: 0.125,
 } as const;
 
-export const DRAFT_IMAGES_PER_RUN = 2;
+// Higgsfield soul/standard only accepts batch_size of 1 or 4.
+export const DRAFT_IMAGES_PER_RUN = 1;
 export const REFINE_IMAGES_PER_RUN = 4;
 
 /** Free tier: draft runs per account, sign-in required, never resets. */
