@@ -17,11 +17,12 @@ export type ModelTier = 'draft' | 'refine' | 'stencil';
 
 export const MODELS: Record<ModelTier, string> = {
   // Cheap, fast, genuinely good at graphic/line work — exploration tier.
-  draft: process.env.HF_MODEL_DRAFT || 'reve/text-to-image',
+  draft: process.env.HF_MODEL_DRAFT || 'higgsfield-ai/soul/standard',
   // Quality tier for the 4-up refine set once a concept is chosen.
-  refine: process.env.HF_MODEL_REFINE || 'bytedance/seedream/v4/text-to-image',
+  refine: process.env.HF_MODEL_REFINE || 'higgsfield-ai/soul/standard',
   // Image-edit model used for stencil conversion of a chosen design.
-  stencil: process.env.HF_MODEL_STENCIL || 'bytedance/seedream/v4/edit',
+  // Soul is image-to-image capable; the prompt drives the stencil conversion.
+  stencil: process.env.HF_MODEL_STENCIL || 'higgsfield-ai/soul/standard',
 };
 
 export type HfStatus = 'queued' | 'in_progress' | 'completed' | 'failed' | 'nsfw';
