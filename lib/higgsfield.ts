@@ -21,11 +21,11 @@ export type ModelTier = 'draft' | 'refine' | 'stencil';
 // (soul/v2/standard) is the newest flagship, costs 0 credits, and produces
 // clean flat flash with the flash-format prompt (lib/prompts FLASH_SUFFIX).
 export const MODELS: Record<ModelTier, string> = {
-  // Exploration tier — Soul 2, free, fast.
-  draft: process.env.HF_MODEL_DRAFT || 'higgsfield-ai/soul/v2/standard',
-  // Quality tier for the refine set once a concept is chosen.
-  refine: process.env.HF_MODEL_REFINE || 'higgsfield-ai/soul/v2/standard',
-  // Stencil conversion. Soul Standard is the image-capable tier here.
+  // Soul Standard reliably renders flat isolated flash (Soul 2 tends to add a
+  // photoreal "paper held in hands" mockup, which is wrong for tattoo flash).
+  // 1 credit (~$0.05) per image; margins still clear the 70% target.
+  draft: process.env.HF_MODEL_DRAFT || 'higgsfield-ai/soul/standard',
+  refine: process.env.HF_MODEL_REFINE || 'higgsfield-ai/soul/standard',
   stencil: process.env.HF_MODEL_STENCIL || 'higgsfield-ai/soul/standard',
 };
 

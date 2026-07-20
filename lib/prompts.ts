@@ -51,8 +51,9 @@ const FLASH_SUFFIX =
   'flat 2D tattoo flash artwork, isolated on a plain solid white background, ' +
   'crisp confident linework, high contrast, deliberate line weights that will ' +
   'age well in skin, centered composition, vector-style clean flash sheet, ' +
-  'no skin, no body, no hands, no arm, no paper, no pen, no photo, no mockup, ' +
-  'no watermark, no text unless the design itself is lettering';
+  'no skin, no body, no hands, no arm, no person, no paper, no pen, no photo, ' +
+  'no mockup, no watermark, no text, no words, no letters, no caption, ' +
+  'no title, no signature, no frame, no border';
 
 export function getStyle(slug: string): TattooStyle | undefined {
   return STYLES.find((s) => s.slug === slug);
@@ -95,7 +96,21 @@ export const STENCIL_PROMPT =
   'fills, no grey, preserve every structural line and proportion exactly, ' +
   'ready for thermal transfer paper';
 
-/** Sanitize free-text subjects before they reach the model or a URL. */
+/**
+ * Sanitize free-text subjects. People write "a tattoo of a wolf" or "I want a
+ * skull design" — we prepend "tattoo design of", so strip those meta-phrases to
+ * avoid "tattoo design of a tattoo of...". Also drop trailing clauses that make
+ * the model try to render text (references to books/films/song lyrics), which
+ * is where the garbled lettering comes from.
+ */
 export function cleanSubject(raw: string): string {
-  return raw.replace(/\s+/g, ' ').trim().slice(0, 300);
+  let s = raw.replace(/\s+/g, ' ').trim();
+  // Strip leading meta-phrases, repeatedly.
+  const leads = /^(i\s+want\s+|i'?d\s+like\s+|please\s+|can\s+you\s+(make|design|do)\s+|a\s+|an\s+|the\s+|some\s+|design\s+of\s+|tattoo\s+(design\s+|idea\s+)?of\s+|tattoo\s+)/i;
+  let prev;
+  do { prev = s; s = s.replace(leads, ''); } while (s !== prev);
+  // Drop "from the X novels/books/films" style attribution clauses that push
+  // the model toward rendering titles/text rather than an image.
+  s = s.replace(/,?\s+(from|based on|inspired by|in the style of)\s+the?\b.*$/i, '');
+  return s.trim().slice(0, 200) || raw.trim().slice(0, 200);
 }
