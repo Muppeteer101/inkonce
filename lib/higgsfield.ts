@@ -15,13 +15,17 @@ const BASE = 'https://platform.higgsfield.ai';
 
 export type ModelTier = 'draft' | 'refine' | 'stencil';
 
+// Model IDs verified against the account's live platform-API catalog
+// (GET /models). Only Higgsfield's own Soul family is exposed on the developer
+// API — Seedream/Flux/Nano-Banana are consumer-website only. Soul 2
+// (soul/v2/standard) is the newest flagship, costs 0 credits, and produces
+// clean flat flash with the flash-format prompt (lib/prompts FLASH_SUFFIX).
 export const MODELS: Record<ModelTier, string> = {
-  // Cheap, fast, genuinely good at graphic/line work — exploration tier.
-  draft: process.env.HF_MODEL_DRAFT || 'higgsfield-ai/soul/standard',
-  // Quality tier for the 4-up refine set once a concept is chosen.
-  refine: process.env.HF_MODEL_REFINE || 'higgsfield-ai/soul/standard',
-  // Image-edit model used for stencil conversion of a chosen design.
-  // Soul is image-to-image capable; the prompt drives the stencil conversion.
+  // Exploration tier — Soul 2, free, fast.
+  draft: process.env.HF_MODEL_DRAFT || 'higgsfield-ai/soul/v2/standard',
+  // Quality tier for the refine set once a concept is chosen.
+  refine: process.env.HF_MODEL_REFINE || 'higgsfield-ai/soul/v2/standard',
+  // Stencil conversion. Soul Standard is the image-capable tier here.
   stencil: process.env.HF_MODEL_STENCIL || 'higgsfield-ai/soul/standard',
 };
 

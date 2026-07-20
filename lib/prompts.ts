@@ -48,9 +48,10 @@ const COLOR_FRAGMENTS: Record<ColorMode, string> = {
 
 /** The flash-format contract appended to every design prompt. */
 const FLASH_SUFFIX =
-  'professional tattoo flash design, isolated on a plain white background, ' +
+  'flat 2D tattoo flash artwork, isolated on a plain solid white background, ' +
   'crisp confident linework, high contrast, deliberate line weights that will ' +
-  'age well in skin, centered composition, no skin, no body, no mockup, ' +
+  'age well in skin, centered composition, vector-style clean flash sheet, ' +
+  'no skin, no body, no hands, no arm, no paper, no pen, no photo, no mockup, ' +
   'no watermark, no text unless the design itself is lettering';
 
 export function getStyle(slug: string): TattooStyle | undefined {
