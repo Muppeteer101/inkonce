@@ -195,7 +195,20 @@ export async function applyResult(
   if (rec.status !== 'pending') return rec; // already settled — idempotent
 
   if (result.status === 'completed') {
-    const urls = (result.images ?? []).map((i) => i.url).filter(Boolean);
+    let urls = (result.images ?? []).map((i) => i.url).filter(Boolean);
+    // Higgsfield's completion *webhook* frequently omits the images array —
+    // only the status endpoint carries it reliably. Never settle a completed
+    // run with zero images: re-fetch the authoritative status, and if it's
+    // still empty, stay pending so the next poll recovers it.
+    if (urls.length === 0 && rec.hfRequestId) {
+      try {
+        const fresh = await getRequestStatus(rec.hfRequestId);
+        urls = (fresh.images ?? []).map((i) => i.url).filter(Boolean);
+      } catch {
+        /* transient — fall through to the pending guard below */
+      }
+    }
+    if (urls.length === 0) return rec; // not truly ready yet; keep polling
     rec.images = await mirrorToBlob(rec, urls);
     rec.status = 'completed';
     rec.completedAt = Date.now();

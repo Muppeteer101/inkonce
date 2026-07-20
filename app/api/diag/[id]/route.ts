@@ -18,6 +18,25 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   }
   const { id } = await ctx.params;
   const rec = await getGeneration(id);
+
+  // Repair a run that settled 'completed' with no images (the webhook bug):
+  // pull the authoritative images and write them back.
+  if (rec && url.searchParams.get('repair') === '1' && rec.hfRequestId && (rec.images?.length ?? 0) === 0) {
+    try {
+      const fresh = await getRequestStatus(rec.hfRequestId);
+      const urls = (fresh.images ?? []).map((i) => i.url).filter(Boolean);
+      if (urls.length) {
+        rec.images = urls;
+        rec.status = 'completed';
+        rec.completedAt = Date.now();
+        await redis.set(k.generation(rec.id), rec);
+        return NextResponse.json({ repaired: true, images: urls });
+      }
+      return NextResponse.json({ repaired: false, reason: 'no images in fresh status', fresh });
+    } catch (e) {
+      return NextResponse.json({ repaired: false, error: String(e) });
+    }
+  }
   const out: Record<string, unknown> = {
     models: MODELS,
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? '(unset)',
