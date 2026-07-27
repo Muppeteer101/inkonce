@@ -186,6 +186,33 @@ export async function startExport(
  * Vercel Blob — Higgsfield deletes outputs after ~7 days; "keep your designs
  * forever" is a product promise, so Blob is the system of record.
  */
+/**
+ * How long a run may sit pending before we give up, fail it and refund.
+ *
+ * The zero-image guard below deliberately refuses to settle a "completed"
+ * result that carries no images, because Higgsfield's webhook often omits
+ * them. Without a deadline that guard has no exit: a run whose images never
+ * arrive stays pending forever, the allowance stays consumed, and the studio
+ * polls it every 2.5s indefinitely. Generations finish in well under a minute,
+ * so 10 minutes is a wide margin that still terminates.
+ */
+const PENDING_TIMEOUT_MS = 10 * 60 * 1000;
+
+function isStale(rec: GenerationRecord): boolean {
+  return Date.now() - rec.createdAt > PENDING_TIMEOUT_MS;
+}
+
+/** Settle a stuck run as failed and give the allowance back. */
+async function failStale(rec: GenerationRecord): Promise<GenerationRecord> {
+  rec.status = 'failed';
+  rec.error = 'That run timed out before any image arrived. It was not counted — please try again.';
+  rec.completedAt = Date.now();
+  await refund(rec.userId, KIND_TO_USAGE[rec.kind]);
+  await saveGeneration(rec);
+  await bumpCounter(`gen:${rec.kind}:stale`);
+  return rec;
+}
+
 export async function applyResult(
   genId: string,
   result: Pick<HfStatusResponse, 'status' | 'images' | 'error'>,
@@ -208,7 +235,11 @@ export async function applyResult(
         /* transient — fall through to the pending guard below */
       }
     }
-    if (urls.length === 0) return rec; // not truly ready yet; keep polling
+    if (urls.length === 0) {
+      // Keep polling — unless it has been pending long enough that no image is
+      // coming, in which case fail it rather than stranding the allowance.
+      return isStale(rec) ? await failStale(rec) : rec;
+    }
     rec.images = await mirrorToBlob(rec, urls);
     rec.status = 'completed';
     rec.completedAt = Date.now();
@@ -222,7 +253,9 @@ export async function applyResult(
     // Higgsfield refunds us for failed/NSFW runs; pass that on.
     await refund(rec.userId, KIND_TO_USAGE[rec.kind]);
   } else {
-    return rec; // still queued/in_progress
+    // Still queued/in_progress — but a run that never leaves this state would
+    // otherwise poll forever, so it gets the same deadline.
+    return isStale(rec) ? await failStale(rec) : rec;
   }
 
   await saveGeneration(rec);
@@ -233,14 +266,18 @@ export async function applyResult(
 /** Poll fallback for when the webhook hasn't landed (or local dev). */
 export async function pollGeneration(genId: string): Promise<GenerationRecord | null> {
   const rec = await getGeneration(genId);
-  if (!rec || rec.status !== 'pending' || !rec.hfRequestId) return rec;
+  if (!rec || rec.status !== 'pending') return rec;
+  // A run with no provider request id can never settle on its own.
+  if (!rec.hfRequestId) return isStale(rec) ? await failStale(rec) : rec;
   // Don't hammer Higgsfield for brand-new requests.
   if (Date.now() - rec.createdAt < 2_000) return rec;
   try {
     const status = await getRequestStatus(rec.hfRequestId);
     return (await applyResult(genId, status)) ?? rec;
   } catch {
-    return rec; // transient — client will poll again
+    // Transient — the client will poll again. But if the status endpoint has
+    // been failing past the deadline, stop waiting and refund.
+    return isStale(rec) ? await failStale(rec) : rec;
   }
 }
 
@@ -258,8 +295,14 @@ async function mirrorToBlob(rec: GenerationRecord, urls: string[]): Promise<stri
           { access: 'public', contentType, addRandomSuffix: true },
         );
         return blob.url;
-      } catch {
-        return url; // fall back to source URL rather than losing the image
+      } catch (err) {
+        // Falling back to the source URL keeps the image visible now, but
+        // Higgsfield purges outputs after ~7 days — so a persistent failure
+        // here quietly breaks the "keep your designs forever" promise with no
+        // other symptom. Make it loud: this should be zero in the dashboard.
+        console.error('blob mirror failed', { genId: rec.id, index: i, err });
+        await bumpCounter('blob:mirror:failed');
+        return url;
       }
     }),
   );

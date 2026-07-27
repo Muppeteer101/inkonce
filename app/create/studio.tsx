@@ -55,6 +55,13 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
   const poll = useCallback((genId: string) => {
     if (pollers.current.has(genId)) return;
     pollers.current.add(genId);
+    // Give up after ~11 minutes — just past the server's 10-minute deadline
+    // (lib/generation PENDING_TIMEOUT_MS), so in the normal case the server
+    // settles the run as failed and refunds, and we render that. This ceiling
+    // only catches the case where even that never lands; without it a stuck
+    // run polls every 2.5s for as long as the tab stays open.
+    const MAX_TICKS = 265;
+    let ticks = 0;
     const tick = async () => {
       try {
         const res = await fetch(`/api/generate/${genId}`);
@@ -68,6 +75,18 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
           }
         }
       } catch { /* retry */ }
+      if (++ticks >= MAX_TICKS) {
+        pollers.current.delete(genId);
+        setRuns((prev) =>
+          prev.map((r) =>
+            r.id === genId && r.status === 'pending'
+              ? { ...r, status: 'failed', error: 'This run stopped responding. Reload to check on it — if it never finished, the run was not counted.' }
+              : r,
+          ),
+        );
+        refreshAllowance();
+        return;
+      }
       setTimeout(tick, 2500);
     };
     setTimeout(tick, 2500);
