@@ -45,7 +45,30 @@ describe('prompt engine', () => {
 
   it('cleanSubject trims, collapses whitespace and caps length', () => {
     expect(cleanSubject('  a   wolf \n howling ')).toBe('a wolf howling');
-    expect(cleanSubject('x'.repeat(500)).length).toBe(300);
+    expect(cleanSubject('x'.repeat(500)).length).toBe(200);
+  });
+
+  it('cleanSubject strips meta-phrases but never the subject itself', () => {
+    expect(cleanSubject('i want a tattoo of a wolf')).toBe('a wolf');
+    expect(cleanSubject('tattoo design of a snake')).toBe('a snake');
+    expect(cleanSubject('please design a dragon')).toBe('a dragon');
+  });
+
+  // Regression: the meta-phrase stripper used to eat bare articles and delete
+  // every "from …"/"in the style of …" clause to end-of-string, which silently
+  // destroyed the subject. Garbled lettering is handled by FLASH_SUFFIX now.
+  it('cleanSubject preserves references and prepositional clauses', () => {
+    expect(cleanSubject('A tattoo of death, from the disc world novels')).toBe(
+      'death, from the disc world novels',
+    );
+    expect(cleanSubject('a dragon emerging from the sea')).toBe('a dragon emerging from the sea');
+    expect(cleanSubject('smoke rising from the barrel of a gun')).toBe(
+      'smoke rising from the barrel of a gun',
+    );
+    expect(cleanSubject('a wolf in the style of the japanese masters')).toBe(
+      'a wolf in the style of the japanese masters',
+    );
+    expect(cleanSubject('The Death of Rats')).toBe('The Death of Rats');
   });
 
   it('stencil prompt demands pure linework', () => {
