@@ -99,18 +99,30 @@ export const STENCIL_PROMPT =
 /**
  * Sanitize free-text subjects. People write "a tattoo of a wolf" or "I want a
  * skull design" — we prepend "tattoo design of", so strip those meta-phrases to
- * avoid "tattoo design of a tattoo of...". Also drop trailing clauses that make
- * the model try to render text (references to books/films/song lyrics), which
- * is where the garbled lettering comes from.
+ * avoid "tattoo design of a tattoo of...".
+ *
+ * Two things this deliberately does NOT do, because both destroyed real intent:
+ *
+ *   - **Strip bare articles.** "a"/"an"/"the" are content, not meta. Removing
+ *     them turned "a wolf howling" into "wolf howling" and "The Death of Rats"
+ *     into "Death of Rats". An article is only dropped when it is part of the
+ *     meta-phrase itself ("a tattoo of a wolf" → "a wolf").
+ *   - **Delete trailing "from …" / "in the style of …" clauses.** That was
+ *     added to stop the model rendering book titles as text, but it matched to
+ *     end-of-string and silently ate the subject: "a dragon emerging from the
+ *     sea" → "dragon emerging"; "smoke rising from the barrel of a gun" →
+ *     "smoke rising"; "death, from the disc world novels" → "death" (the
+ *     generic-skull bug). Garbled lettering is suppressed at the prompt
+ *     contract instead — FLASH_SUFFIX carries "no text, no words, no letters,
+ *     no caption, no title", which is the right layer for it.
  */
 export function cleanSubject(raw: string): string {
   let s = raw.replace(/\s+/g, ' ').trim();
-  // Strip leading meta-phrases, repeatedly.
-  const leads = /^(i\s+want\s+|i'?d\s+like\s+|please\s+|can\s+you\s+(make|design|do)\s+|a\s+|an\s+|the\s+|some\s+|design\s+of\s+|tattoo\s+(design\s+|idea\s+)?of\s+|tattoo\s+)/i;
+  // Leading meta-phrases only. An article is consumed solely as part of a
+  // "…tattoo of"/"…design of" phrase, never on its own.
+  const leads =
+    /^(?:i\s+want\s+|i'?d\s+like\s+|please\s+|can\s+you\s+(?:make|design|do)\s+(?:me\s+)?)*(?:(?:a|an|the|some)\s+)?(?:tattoo\s+(?:design\s+|idea\s+)?of\s+|design\s+(?:of\s+)?|tattoo\s+)/i;
   let prev;
   do { prev = s; s = s.replace(leads, ''); } while (s !== prev);
-  // Drop "from the X novels/books/films" style attribution clauses that push
-  // the model toward rendering titles/text rather than an image.
-  s = s.replace(/,?\s+(from|based on|inspired by|in the style of)\s+the?\b.*$/i, '');
   return s.trim().slice(0, 200) || raw.trim().slice(0, 200);
 }

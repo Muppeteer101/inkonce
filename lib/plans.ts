@@ -1,20 +1,40 @@
 /**
  * InkOnce pricing model — the single source of truth for plan caps and the
- * 70%-margin guardrail. PRICING.md explains the maths; lib/plans.test.ts
- * fails the build if any constant here drops a plan below the target margin.
+ * margin guardrail. PRICING.md explains the maths; lib/plans.test.ts fails the
+ * build if any constant here drops a plan below the target margin.
  *
  * Costs are per-image USD on the Higgsfield platform API. They are researched
  * estimates (see PRICING.md §1) — replace with observed dashboard numbers at
  * launch; the test recomputes everything.
  */
 
+/**
+ * Per-image cost by tier.
+ *
+ * All three tiers currently run the SAME model — `higgsfield-ai/soul/standard`
+ * (see lib/higgsfield.ts). Only Higgsfield's own Soul family is exposed on this
+ * account's developer API, so the cheap draft class and the premium render
+ * class this table used to assume (Z-Image, Seedream 4.5, Nano Banana Pro) are
+ * not reachable. Pricing them separately made the guardrail measure a product
+ * we don't ship: it reported ~76% on the Design Pass while the real figure was
+ * ~45%.
+ *
+ * Soul Standard bills 1 credit/image; PRICING.md §1 puts a credit at ~$0.0625,
+ * so all three tiers carry that. Conservative on purpose — the credit price is
+ * itself an estimate, and a guardrail should err expensive.
+ *
+ * These stop being equal the moment a tier moves to a different model; keep the
+ * three keys so that change is a one-line edit.
+ */
+const SOUL_STANDARD_USD = 0.0625;
+
 export const COST_PER_IMAGE_USD = {
-  /** Draft-class model (Z-Image / Nano Banana Lite class). */
-  draft: 0.01,
-  /** Standard model (Seedream 4.5 class, up to 4K). */
-  standard: 0.0625,
-  /** Premium render (Nano Banana Pro / Soul HD class). */
-  premium: 0.125,
+  /** Exploration tier — soul/standard. */
+  draft: SOUL_STANDARD_USD,
+  /** Refine + stencil tier — soul/standard. */
+  standard: SOUL_STANDARD_USD,
+  /** Hi-res export tier — soul/standard. */
+  premium: SOUL_STANDARD_USD,
 } as const;
 
 // Higgsfield soul/standard only accepts batch_size of 1 or 4.
@@ -29,7 +49,18 @@ export const ASSUMED_FREE_TO_PAID_CONVERSION = 0.03;
 
 export const STRIPE_FEE = { pct: 0.029, fixedUsd: 0.3 } as const;
 
-export const TARGET_MIN_NET_MARGIN = 0.7;
+/**
+ * Accepted net-margin floor (decision, 2026-07-27): quality of output wins over
+ * margin — a product that sells at ~45% beats one that doesn't at 70%. The
+ * original 70% target assumed a cheap draft-class model this account cannot
+ * reach; on Soul Standard across all tiers the Design Pass lands at ~45%.
+ *
+ * If this needs to come back up, the lever is CAC, not the model: the free tier
+ * costs FREE_DRAFT_RUNS × $0.0625 ÷ 3% conversion = $6.25 per paying customer,
+ * more than the $3.88 of goods they consume. FREE_DRAFT_RUNS 3→1 alone returns
+ * the Design Pass to ~66% with zero effect on output quality.
+ */
+export const TARGET_MIN_NET_MARGIN = 0.4;
 
 export type PlanCaps = {
   draftRuns: number;

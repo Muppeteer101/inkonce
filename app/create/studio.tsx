@@ -19,6 +19,12 @@ type Gen = {
   styleSlug: string;
   images: string[];
   error?: string;
+  /** What the user typed, before interpretation. */
+  rawSubject?: string;
+  /** How the interpreter read them — shown so a wrong reading is correctable. */
+  interpretation?: string;
+  confidence?: 'high' | 'low';
+  clarifyingQuestion?: string;
 };
 
 const COMPLEXITIES = ['simple', 'balanced', 'detailed'] as const;
@@ -55,6 +61,13 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
   const poll = useCallback((genId: string) => {
     if (pollers.current.has(genId)) return;
     pollers.current.add(genId);
+    // Give up after ~11 minutes — just past the server's 10-minute deadline
+    // (lib/generation PENDING_TIMEOUT_MS), so in the normal case the server
+    // settles the run as failed and refunds, and we render that. This ceiling
+    // only catches the case where even that never lands; without it a stuck
+    // run polls every 2.5s for as long as the tab stays open.
+    const MAX_TICKS = 265;
+    let ticks = 0;
     const tick = async () => {
       try {
         const res = await fetch(`/api/generate/${genId}`);
@@ -68,6 +81,18 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
           }
         }
       } catch { /* retry */ }
+      if (++ticks >= MAX_TICKS) {
+        pollers.current.delete(genId);
+        setRuns((prev) =>
+          prev.map((r) =>
+            r.id === genId && r.status === 'pending'
+              ? { ...r, status: 'failed', error: 'This run stopped responding. Reload to check on it — if it never finished, the run was not counted.' }
+              : r,
+          ),
+        );
+        refreshAllowance();
+        return;
+      }
       setTimeout(tick, 2500);
     };
     setTimeout(tick, 2500);
@@ -127,11 +152,18 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
       <aside className="panel">
         <div className="field">
           <label htmlFor="idea">Your idea</label>
+          {/*
+            Placeholder is deliberately plain language, not art direction. The
+            old one ("a snake coiled around a dagger, with a single peony")
+            taught people to write prompts — which is what every competitor
+            does, and it is an admission that the tool cannot read an ordinary
+            sentence. This one can, so it should ask for one.
+          */}
           <textarea
             id="idea"
             value={subject}
             maxLength={300}
-            placeholder="e.g. a snake coiled around a dagger, with a single peony"
+            placeholder="Say it however you'd say it out loud — e.g. something for my nan who passed away last year"
             onChange={(e) => setSubject(e.target.value)}
           />
         </div>
@@ -226,10 +258,27 @@ export default function Studio({ initialIdea, initialStyle }: { initialIdea?: st
         ) : (
           runs.map((run) => (
             <div key={run.id} className="panel" style={{ marginBottom: 18 }}>
-              <p className="small faint" style={{ marginBottom: 12 }}>
+              <p className="small faint" style={{ marginBottom: run.interpretation ? 6 : 12 }}>
                 {run.kind === 'draft' ? 'Draft run' : run.kind === 'refine' ? 'Refined render' : run.kind === 'stencil' ? 'Stencil' : 'Hi-res render'}
-                {' · '}{run.subject}
+                {' · '}{run.rawSubject ?? run.subject}
               </p>
+              {/*
+                Showing the reading is the point. A tool that silently swaps in
+                its own idea of your tattoo lets you burn runs never knowing
+                why the result is wrong; this makes it a one-edit fix.
+              */}
+              {run.interpretation && (
+                <p className="small" style={{ marginBottom: 12, opacity: 0.85 }}>
+                  <span aria-hidden>✎ </span>
+                  {run.interpretation}
+                  {run.confidence === 'low' && (
+                    <span className="faint"> — reword above if that&rsquo;s not it.</span>
+                  )}
+                </p>
+              )}
+              {run.clarifyingQuestion && (
+                <p className="small faint" style={{ marginBottom: 12 }}>{run.clarifyingQuestion}</p>
+              )}
               {run.status === 'pending' && (
                 <div className="pending-tile" style={{ padding: '48px 0' }}>
                   <div className="spinner" />
