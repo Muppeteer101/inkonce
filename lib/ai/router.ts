@@ -91,26 +91,31 @@ export const MODELS: Record<string, ModelChoice> = {
   'tattty-flash': {
     // Trained on 678 *sketch designs*, not skin photos — the right shape for
     // flash, and the closest thing on offer to BlackInk's own fine-tune.
+    // Benchmarked well: correct characters, clean white ground, good shading.
     provider: 'replicate',
     modelId: 'tattzy25/tattty_4_all',
     version: '4e8f6c1dc77db77dabaf98318cde3679375a399b434ae2db0e698804ac84919c',
-    costPerImageUsd: 0.03,
+    costPerImageUsd: 0.01,
     capabilities: { ...FLUX_CAPS, batchSizes: [1, 2, 3, 4] },
   },
   'heavy-hand': {
-    // "Heavy contrast blackwork trained straight from my portfolio."
+    // "Heavy contrast blackwork trained straight from my portfolio." Beat every
+    // general model on solid blackwork — real filled shapes rather than the
+    // scale-texture illustration the general models default to — at a third of
+    // seedream-4's price. This is the one place routing currently earns its keep.
     provider: 'replicate',
     modelId: 'tattzy25/heavy_hand_dark',
     version: '6955360784cdc441a7bd328874a370ec20a86c545b9ea0d765cef3fb66623569',
-    costPerImageUsd: 0.03,
+    costPerImageUsd: 0.01,
     capabilities: FLUX_CAPS,
   },
   fontivate: {
-    // Lettering-focused LoRA; candidate rival to Ideogram for script styles.
+    // Lettering LoRA. Benchmarked clean, but no better than the $0.003 default,
+    // so it earns no override — kept for future re-testing.
     provider: 'replicate',
     modelId: 'tattzy25/fontivate-v0',
     version: '0799b47346ff3bba880a18de24bd84cf63331fd24d579a2c5abba085c2367be5',
-    costPerImageUsd: 0.03,
+    costPerImageUsd: 0.01,
     capabilities: FLUX_CAPS,
   },
   'ideogram-v3': {
@@ -142,19 +147,23 @@ export type RouteInput = {
 
 /**
  * Per-style overrides, chosen from the Step-0 benchmark rather than assumption.
+ * See docs/MODEL_BENCHMARK.md. One row, and not the one the plan predicted.
  *
- * Deliberately empty. The plan expected lettering to need a specialist
- * (Ideogram), but on the real pipeline every model spelled the test phrase
- * correctly with no garbling, the general models produced *better* tattoo
- * script, and Ideogram tinted the background on all five cases — which breaks
- * the flash contract outright. See docs/MODEL_BENCHMARK.md.
+ * The plan expected **lettering** to need a specialist. It doesn't: every model
+ * spelled the test phrase correctly, the general models produced better tattoo
+ * script than the candidate specialist, and Ideogram tinted the background on
+ * all five cases — which breaks the flash contract outright.
  *
- * An empty table is a legitimate outcome, and worth stating plainly: it means
- * the routing layer currently earns nothing, and the value lives in model
- * choice and prompt quality instead. Add a row only when a benchmark shows a
- * model measurably winning a style.
+ * Where routing *does* pay is **blackwork**, because the style asks for
+ * something general models resist: solid filled black shapes rather than
+ * scale-texture illustration. An artist's own blackwork LoRA produced real
+ * fills at a third of the refine model's price.
+ *
+ * Add a row only when a benchmark shows a model measurably winning a style.
  */
-const STYLE_OVERRIDES: Record<string, Partial<Record<GenTask, string>>> = {};
+const STYLE_OVERRIDES: Record<string, Partial<Record<GenTask, string>>> = {
+  blackwork: { draft: 'heavy-hand', refine: 'heavy-hand', hires: 'heavy-hand' },
+};
 
 /**
  * Defaults per task, set from the benchmark. Env vars win, so prod can be

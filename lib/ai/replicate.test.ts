@@ -175,6 +175,16 @@ describe('router', () => {
     );
   });
 
+  it('blackwork routes to the blackwork specialist', () => {
+    const bw = selectModel({ task: 'refine', styleSlug: 'blackwork' });
+    expect(bw.modelId).toBe('tattzy25/heavy_hand_dark');
+    // Overrides must stay cheaper-or-equal to the default they replace, or a
+    // style override quietly becomes a margin regression.
+    expect(bw.costPerImageUsd).toBeLessThanOrEqual(
+      selectModel({ task: 'refine' }).costPerImageUsd,
+    );
+  });
+
   it('draft is the cheapest route — the free tier multiplies it ~200x', () => {
     const draft = selectModel({ task: 'draft' });
     const refine = selectModel({ task: 'refine' });

@@ -25,7 +25,18 @@ composition — one image per model per case, judged on output.
 | **flux-schnell** | **$0.003** | 15.3s | **Astonishing value.** Clean, on-brief, correct flash framing. Occasionally misses a detail (drew one moon where the brief said moon *phases*). 10× cheaper than anything else. |
 | flux-dev | $0.025 | 38.3s | **Skip.** Soft, blurry, muddy mid-tones on fine-line — the exact "heals into mush" failure PRICING/prompts warn about. Slowest and 8× the price of schnell for worse output. |
 | ideogram-v3 | $0.03 | 8.7s | Strong style interpretation, **but tinted backgrounds on every single case** (cream, grey, pink). Violates the flash contract's "plain solid white background". Disqualifying without post-processing. |
-| fofr/sdxl-fresh-ink | $0.014 | — | **Wrong shape for this product.** Fine-tuned on *photos of freshly inked tattoos* — i.e. tattoos on skin, precisely what FLASH_SUFFIX suppresses. Useful later for on-skin previews; not a flash model. |
+| fofr/sdxl-fresh-ink | <$0.01 | 10s | **Disqualified.** Fine-tuned on *photos of freshly inked tattoos*. Output was rendered art on **black and grey grounds inside decorative circular frames** — violating "plain solid white background", "no frame, no border" and "no photo" at once. Beautiful; wrong product. Keep for a future on-skin preview. |
+
+### Tattoo-specific fine-tunes
+
+The plan named only `fresh-ink`. Searching Replicate properly turns up a family
+of tattoo LoRAs, and two of them earn their place.
+
+| Model | $/image | Verdict |
+|---|---|---|
+| **tattzy25/heavy_hand_dark** | **$0.01** | **Wins blackwork outright.** "Heavy contrast blackwork trained straight from my portfolio." Produced genuine solid filled shapes where general models default to scale-texture illustration — and at a third of seedream-4's price. The one style override in the router. |
+| **tattzy25/tattty_4_all** | **$0.01** | Trained on 678 **sketch designs**, not skin photos. Correct characters on the fidelity case, clean white ground, good shading. Competitive with seedream-4 at a third the price — the closest available analogue to BlackInk's own fine-tune, and worth re-testing as the refine default. |
+| tattzy25/fontivate-v0 | $0.01 | Clean lettering, but no better than the $0.003 default. Earns no override. |
 
 ## Assumptions this overturned
 
@@ -50,7 +61,10 @@ was the constraint.
   good enough that the quality gap only matters once a concept is chosen.
 - **refine / hires → seedream-4.** Best quality where the user has committed.
 - **stencil → seedream-4.** Image-to-image capable and holds line structure.
-- **No lettering override.** The evidence removed the reason for one.
+- **blackwork → heavy-hand.** The one place routing pays. Solid fills beat the
+  general models' scale texture, and it costs a third as much.
+- **No lettering override.** The evidence removed the reason for one — which is
+  worth recording, because the plan predicted the opposite.
 
 ## Cost consequence
 
@@ -70,14 +84,18 @@ when the provider swap lands.
 
 ## Caveats
 
-- Prices are Replicate's published per-image rates. **Reconcile against the
-  billing dashboard before trusting them** — PRICING.md §1 has been wrong about
-  model costs once already.
+- Prices for seedream-4, the tattoo LoRAs and fresh-ink are **observed from the
+  Replicate billing dashboard**, not published estimates. flux-schnell and
+  flux-dev remain published rates and should be reconciled the same way.
+  Notably the tattoo LoRAs bill at $0.01, a third of the $0.03 first assumed.
 - n=1 per cell. Enough to eliminate clearly-worse options; not enough to split
   seedream-4 from nano-banana on quality. Re-run with seeds before treating the
   ordering as settled.
 - Judged by one reviewer against the flash contract, not blind-scored, and not
   compared against BlackInk output. The competitive bar in the plan's §5 remains
   unmeasured.
-- **Account is throttled**: below $5.00 credit Replicate caps prediction creation
-  at 6/minute with a burst of 1. Serial only — production needs credit first.
+- **Account is throttled**: Replicate caps prediction creation at 6/minute with
+  a burst of 1 "while you have less than $5.0 in credit". This persisted with
+  the dashboard reporting **$18.52 credit remaining**, so the limiter is
+  evidently not counting that balance — likely promotional credit rather than a
+  purchased one. Resolve before production; serial-only serves no one.
