@@ -9,7 +9,9 @@ export const maxDuration = 60;
 
 const Body = z.object({
   subject: z.string().min(2).max(300),
-  styleSlug: z.enum(STYLES.map((s) => s.slug) as [string, ...string[]]),
+  // Optional: the interpreter picks a style when the user only describes what
+  // they want. An explicit choice still wins over its suggestion.
+  styleSlug: z.enum(STYLES.map((s) => s.slug) as [string, ...string[]]).optional(),
   placementSlug: z.enum(PLACEMENTS.map((p) => p.slug) as [string, ...string[]]).optional(),
   complexity: z.enum(['simple', 'balanced', 'detailed']).optional(),
   colorMode: z.enum(['blackwork', 'black-and-grey', 'color']).optional(),

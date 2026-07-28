@@ -7,7 +7,8 @@ import {
   type HfStatusResponse,
   type ModelTier,
 } from './higgsfield';
-import { buildTattooPrompt, cleanSubject, STENCIL_PROMPT, type PromptInput } from './prompts';
+import { buildTattooPrompt, STENCIL_PROMPT, type PromptInput } from './prompts';
+import { interpret } from './ai/brain';
 import { DRAFT_IMAGES_PER_RUN, REFINE_IMAGES_PER_RUN } from './plans';
 
 export type GenerationKind = 'draft' | 'refine' | 'stencil' | 'hires';
@@ -17,7 +18,16 @@ export type GenerationRecord = {
   userId: string;
   kind: GenerationKind;
   status: 'pending' | 'completed' | 'failed' | 'nsfw';
+  /** The render-ready subject: interpreted where possible, raw otherwise. */
   subject: string;
+  /** Exactly what the user typed. Kept so a bad reading can be diagnosed. */
+  rawSubject?: string;
+  /** "Here's how I read you" — surfaced in the studio so it can be corrected. */
+  interpretation?: string;
+  /** 'low' means the brain made a creative call the user did not specify. */
+  confidence?: 'high' | 'low';
+  /** Asked alongside the results when a load-bearing detail was missing. */
+  clarifyingQuestion?: string;
   styleSlug: string;
   placementSlug?: string;
   prompt: string;
@@ -59,7 +69,22 @@ async function saveGeneration(rec: GenerationRecord): Promise<void> {
   await redis.set(k.generation(rec.id), rec);
 }
 
-export type StartDraftInput = PromptInput & { userId: string };
+/**
+ * `styleSlug` is optional: the point of the product is that someone can
+ * describe a tattoo in ordinary words and get one, so the interpreter picks a
+ * style when they didn't. An explicit choice always wins over its suggestion.
+ */
+export type StartDraftInput = Omit<PromptInput, 'styleSlug'> & {
+  userId: string;
+  styleSlug?: string;
+};
+
+/**
+ * Style used when neither the user nor the interpreter named one — a neutral
+ * general-purpose illustrative tattoo rather than a strong genre, so an
+ * unguided run is bland rather than wrong.
+ */
+const DEFAULT_STYLE = 'illustrative';
 
 /**
  * Start a draft or refine run. Consumes allowance first (atomic), refunds on
@@ -70,21 +95,48 @@ export async function startDesignRun(
   kind: 'draft' | 'refine',
   parentId?: string,
 ): Promise<GenerationRecord> {
-  const subject = cleanSubject(input.subject);
-  if (!subject) throw new UserFacingError('Describe your tattoo idea first.');
-  const { prompt, aspectRatio } = buildTattooPrompt({ ...input, subject });
+  const raw = input.subject.trim();
+  if (!raw) throw new UserFacingError('Describe your tattoo idea first.');
 
   const usageKind = KIND_TO_USAGE[kind];
+  // Allowance is taken before interpreting so a user with none left never
+  // costs us a brain call. `interpret` is total — it degrades to the raw text
+  // rather than throwing — so this cannot strand the credit.
   const ok = await consume(input.userId, usageKind);
   if (!ok) throw new AllowanceError(usageKind);
+
+  // Everything between taking the allowance and submitting must give it back
+  // on failure — buildTattooPrompt throws on an unknown style, and an
+  // un-refunded throw here would cost the user a run for nothing.
+  let brief, styleSlug: string, prompt: string, aspectRatio: string;
+  try {
+    brief = await interpret({ rawInput: raw, styleSlug: input.styleSlug });
+    // The user's explicit choices always beat the interpreter's suggestions;
+    // the suggestions only fill what they left blank.
+    styleSlug = input.styleSlug ?? brief.styleSlug ?? DEFAULT_STYLE;
+    ({ prompt, aspectRatio } = buildTattooPrompt({
+      subject: brief.subject,
+      styleSlug,
+      placementSlug: input.placementSlug,
+      complexity: input.complexity ?? brief.complexity,
+      colorMode: input.colorMode ?? brief.colorMode,
+    }));
+  } catch (err) {
+    await refund(input.userId, usageKind);
+    throw err;
+  }
 
   const rec: GenerationRecord = {
     id: newId(),
     userId: input.userId,
     kind,
     status: 'pending',
-    subject,
-    styleSlug: input.styleSlug,
+    subject: brief.subject,
+    rawSubject: raw,
+    interpretation: brief.interpretation,
+    confidence: brief.confidence,
+    clarifyingQuestion: brief.clarifyingQuestion,
+    styleSlug,
     placementSlug: input.placementSlug,
     prompt,
     aspectRatio,
@@ -308,10 +360,31 @@ async function mirrorToBlob(rec: GenerationRecord, urls: string[]): Promise<stri
   );
 }
 
-/** Client-safe view of a generation — prompt engineering stays server-side. */
+/**
+ * Client-safe view of a generation — prompt engineering stays server-side.
+ *
+ * `interpretation` and `clarifyingQuestion` deliberately DO cross this line.
+ * A hidden interpretation is how a tool quietly renders the wrong tattoo and
+ * lets the user burn credits guessing why; showing the reading is what makes a
+ * wrong one a one-click correction instead.
+ */
 export function publicView(rec: GenerationRecord) {
   const { id, kind, status, subject, styleSlug, placementSlug, images, error, createdAt } = rec;
-  return { id, kind, status, subject, styleSlug, placementSlug, images, error, createdAt };
+  return {
+    id,
+    kind,
+    status,
+    subject,
+    styleSlug,
+    placementSlug,
+    images,
+    error,
+    createdAt,
+    rawSubject: rec.rawSubject,
+    interpretation: rec.interpretation,
+    confidence: rec.confidence,
+    clarifyingQuestion: rec.clarifyingQuestion,
+  };
 }
 
 export class UserFacingError extends Error {}

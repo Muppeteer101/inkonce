@@ -42,7 +42,12 @@ vi.mock('@vercel/blob', () => ({
   put: async (path: string) => ({ url: `https://blob.test/${path}` }),
 }));
 
-const { applyResult, pollGeneration } = await import('./generation');
+const interpretMock = vi.fn();
+vi.mock('./ai/brain', () => ({
+  interpret: (...args: unknown[]) => interpretMock(...(args as [])),
+}));
+
+const { applyResult, pollGeneration, startDesignRun } = await import('./generation');
 
 const TEN_MIN = 10 * 60 * 1000;
 
@@ -70,6 +75,8 @@ beforeEach(() => {
   store.clear();
   refund.mockClear();
   getRequestStatus.mockReset();
+  interpretMock.mockReset();
+  interpretMock.mockResolvedValue({ subject: 'a wolf', interpreted: false });
 });
 
 describe('stuck runs never strand the allowance', () => {
@@ -162,5 +169,100 @@ describe('stuck runs never strand the allowance', () => {
 
     expect(out?.status).toBe('failed');
     expect(refund).toHaveBeenCalledWith('user1', 'draftRuns');
+  });
+});
+
+/**
+ * The interpreter advises; the user decides. Getting this precedence backwards
+ * would mean a person picks "fine-line" and silently gets blackwork, which is
+ * a worse product than not interpreting at all.
+ */
+describe('interpretation feeds the run without overriding the user', () => {
+  it('renders the interpreted subject, not the raw text, and keeps both', async () => {
+    interpretMock.mockResolvedValue({
+      subject: 'a snarling lion head with a heavy mane and a scarred brow',
+      interpretation: 'Read "look hard" as heavy blackwork.',
+      confidence: 'high',
+      interpreted: true,
+    });
+
+    const rec = await startDesignRun(
+      { userId: 'user1', subject: 'a lion but make it look hard', styleSlug: 'blackwork' },
+      'draft',
+    );
+
+    expect(rec.subject).toMatch(/snarling lion head/);
+    expect(rec.rawSubject).toBe('a lion but make it look hard');
+    expect(rec.prompt).toMatch(/snarling lion head/);
+    expect(rec.interpretation).toBeTruthy();
+  });
+
+  it('an explicit style beats the interpreter’s suggestion', async () => {
+    interpretMock.mockResolvedValue({
+      subject: 'a moth',
+      styleSlug: 'blackwork',
+      colorMode: 'blackwork',
+      complexity: 'detailed',
+      interpreted: true,
+    });
+
+    const rec = await startDesignRun(
+      {
+        userId: 'user1',
+        subject: 'a moth',
+        styleSlug: 'fine-line',
+        colorMode: 'black-and-grey',
+        complexity: 'simple',
+      },
+      'draft',
+    );
+
+    expect(rec.styleSlug).toBe('fine-line');
+    expect(rec.prompt).toMatch(/black and grey ink only/);
+    expect(rec.prompt).toMatch(/readable at small size/); // 'simple', not 'detailed'
+  });
+
+  it('the interpreter fills only what the user left blank', async () => {
+    interpretMock.mockResolvedValue({
+      subject: 'a koi carp swimming up a waterfall',
+      styleSlug: 'japanese-irezumi',
+      colorMode: 'color',
+      complexity: 'detailed',
+      interpreted: true,
+    });
+
+    const rec = await startDesignRun(
+      { userId: 'user1', subject: 'something japanese for my back' },
+      'draft',
+    );
+
+    expect(rec.styleSlug).toBe('japanese-irezumi');
+    expect(rec.prompt).toMatch(/intricate, richly detailed/);
+  });
+
+  it('falls back to a neutral style when nobody chose one', async () => {
+    interpretMock.mockResolvedValue({ subject: 'a wolf', interpreted: false });
+
+    const rec = await startDesignRun({ userId: 'user1', subject: 'a wolf' }, 'draft');
+
+    expect(rec.styleSlug).toBe('illustrative');
+  });
+
+  it('a failure after the allowance is taken refunds it', async () => {
+    // The interpreter is total, but buildTattooPrompt throws on an unknown
+    // style — and that now happens *after* consume().
+    interpretMock.mockResolvedValue({ subject: 'a wolf', interpreted: true });
+
+    await expect(
+      startDesignRun({ userId: 'user1', subject: 'a wolf', styleSlug: 'not-a-style' }, 'draft'),
+    ).rejects.toThrow(/unknown style/i);
+    expect(refund).toHaveBeenCalledWith('user1', 'draftRuns');
+  });
+
+  it('an empty description is rejected before any allowance is spent', async () => {
+    await expect(
+      startDesignRun({ userId: 'user1', subject: '   ' }, 'draft'),
+    ).rejects.toThrow(/describe your tattoo idea/i);
+    expect(interpretMock).not.toHaveBeenCalled();
   });
 });
