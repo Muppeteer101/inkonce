@@ -50,10 +50,72 @@ The rebuild plan asserted three things that the output does not support:
 3. **"FLUX is the all-rounder."** flux-*dev* was the weakest paid option tested.
    flux-*schnell*, at 1/8 the price, beat it.
 
-It also settles the plan's own fidelity bar. Soul allegedly rendered Binky as a
-skeleton; **every** model here drew a living horse, and both seedream-4 and
-nano-banana got Death, the robe, and the Death of Rats right. The engine really
-was the constraint.
+## ⚠️ What this benchmark does NOT show
+
+**Read this before quoting any result above.**
+
+Every prompt here was written as clean art direction — "a snake coiled around a
+dagger", "a moth with moon phases above it". Those are not what a user types.
+The fidelity case was worse: the plan's failing input was the vague *"A tattoo
+of death, from the disc world novels"*, and it was tested here as a hand-written
+brief naming Death, Binky-as-living-horse and the Death of Rats explicitly. That
+is the interpretation step doing the work, not the model.
+
+So this measures **the renderer given a good prompt**. It does not measure the
+product, which is a description box taking ordinary language.
+
+### The real test
+
+Five phrases as actually typed, through the unmodified pipeline, on seedream-4
+(the best model above):
+
+| Typed | Rendered |
+|---|---|
+| `a lion but make it look hard` | **a manga boy holding a dagger — no lion at all** |
+| `A tattoo of death, from the disc world novels` | generic hooded reaper with a cross-topped staff — no Binky, no Death of Rats |
+| `something for my nan who passed away last year` | a stock flower; nothing memorial |
+| `i need something to cover my exs name on my arm` | a horned demon face; does not address covering anything |
+| `something about getting through depression` | a phoenix rising from broken chains — clichéd but on-brief |
+
+**One acceptable result in five.** And note row two: the naive Discworld input
+reproduces the exact original bug *on the best available model*. That failure
+was attributed to Soul. It survives the engine change intact — because nothing
+in the pipeline understands the request. `buildTattooPrompt` concatenates:
+
+```
+`${style.promptFragment} tattoo design of ${subject}`
+```
+
+…so the model receives `tattoo design of i need something to cover my exs name
+on my arm`.
+
+### Interpretation is the missing variable
+
+Same model, same style, same pipeline — only the subject text replaced with a
+hand-written brief of the kind `lib/ai/brain.ts` is meant to produce:
+
+| Case | Naive | Interpreted |
+|---|---|---|
+| lion | manga boy with a dagger | snarling lion head, heavy mane, scarred brow |
+| nan | a stock flower | forget-me-not bouquet, ribbon-tied, robin perched |
+| discworld | generic reaper, cross staff | Death with hourglass **and** scythe, on a living white horse, Death of Rats riding its neck |
+| depression | phoenix from broken chains | **worse** — lotus and storm cloud rendered as two disconnected elements |
+
+Three clear wins, **one loss**, and the loss matters: richer description is not
+automatically better. "A lotus rising toward a break in storm clouds" split into
+a cloud band floating above a separate flower. A tattoo-aware interpreter must
+produce a *single unified composition*, not merely a longer sentence — which is
+a real constraint on the brain's system prompt, and a thing to evaluate rather
+than assume.
+
+### Consequence
+
+The engine work was necessary — Soul really was the only reachable family, the
+cost model really did price unreachable tiers, and `cleanSubject` really was
+destroying intent. But it is **not sufficient**, and the plan says so itself:
+§2 ranks the intelligence layer above the workflow as the hard-to-copy edge.
+On this evidence the remaining quality gap is almost entirely interpretation,
+not rendering. Nothing above should be read as "the output problem is solved".
 
 ## Chosen defaults
 
